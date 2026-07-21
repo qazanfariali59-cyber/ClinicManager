@@ -17,3 +17,11 @@ export default defineConfig({
     },
   },
 });
+export default defineConfig({
+  base: '/ClinicManager/',   // ← این خط خیلی مهمه!
+  server: {
+    host: "::",
+    port: 8080,
+  },
+  // بقیه کد...
+});
