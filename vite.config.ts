@@ -17,3 +17,9 @@ export default defineConfig({
     },
   },
 });
+// vite.config.ts
+export default defineConfig({
+  base: "/ClinicManager/",   // ← این خط رو اضافه کن
+  server: { ... },
+  ...
+});
