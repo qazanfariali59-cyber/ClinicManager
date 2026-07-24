@@ -10,18 +10,29 @@ export default function App() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const stored = getCurrentUser();
-    setUser(stored);
-    setLoading(false);
+    try {
+      const stored = getCurrentUser();
+      setUser(stored);
+    } catch (e) {
+      console.error('Failed to restore session:', e);
+    } finally {
+      setLoading(false);
+    }
   }, []);
 
-  const handleLogin = (loggedInUser: User) => setUser(loggedInUser);
-  const handleLogout = () => setUser(null);
+  const handleLogin = (loggedInUser: User) => {
+    console.log('Logged in as:', loggedInUser);
+    setUser(loggedInUser);
+  };
+
+  const handleLogout = () => {
+    setUser(null);
+  };
 
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center" style={{ background: '#0d1b2a' }}>
-        <div className="text-cyan-400 text-sm">در حال بارگذاری...</div>
+        <div className="text-cyan-400 text-sm animate-pulse">در حال بارگذاری...</div>
       </div>
     );
   }
