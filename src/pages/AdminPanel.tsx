@@ -22,39 +22,39 @@ const tabs = [
 export default function AdminPanel({ user, onLogout }: AdminPanelProps) {
   const [activeTab, setActiveTab] = useState('users');
 
-  const ActiveIcon = tabs.find(t => t.id === activeTab)?.icon || Users;
-
   return (
     <div className="app-shell" dir="rtl">
       <AppTopBar user={user} title="پنل مدیریت" onLogout={onLogout} />
 
+      {/* Tab navigation */}
+      <nav className="app-bottom-nav">
+        <div className="flex w-full max-w-[1100px] mx-auto">
+          {tabs.map(tab => {
+            const Icon = tab.icon;
+            const isActive = activeTab === tab.id;
+            return (
+              <button
+                key={tab.id}
+                className={`app-bottom-nav-item ${isActive ? 'active' : ''}`}
+                onClick={() => setActiveTab(tab.id)}
+              >
+                <div className="nav-icon-wrap">
+                  <Icon size={16} />
+                </div>
+                <span>{tab.label}</span>
+              </button>
+            );
+          })}
+        </div>
+      </nav>
+
       {/* Content */}
-      <div className="app-content">
+      <div className="app-content pt-6">
         {activeTab === 'users' && <UserManagement />}
         {activeTab === 'services' && <ServiceManagement />}
         {activeTab === 'referrals' && <ReferralAssignment />}
         {activeTab === 'financial' && <FinancialReport />}
       </div>
-
-      {/* Bottom Navigation */}
-      <nav className="app-bottom-nav">
-        {tabs.map(tab => {
-          const Icon = tab.icon;
-          const isActive = activeTab === tab.id;
-          return (
-            <button
-              key={tab.id}
-              className={`app-bottom-nav-item ${isActive ? 'active' : ''}`}
-              onClick={() => setActiveTab(tab.id)}
-            >
-              <div className="nav-icon-wrap">
-                <Icon size={18} />
-              </div>
-              <span>{tab.label}</span>
-            </button>
-          );
-        })}
-      </nav>
     </div>
   );
 }

@@ -20,7 +20,7 @@ export default function App() {
 
   if (loading) {
     return (
-      <div className="app-shell items-center justify-center">
+      <div className="min-h-screen flex items-center justify-center" style={{ background: '#0d1b2a' }}>
         <div className="text-cyan-400 text-sm">در حال بارگذاری...</div>
       </div>
     );

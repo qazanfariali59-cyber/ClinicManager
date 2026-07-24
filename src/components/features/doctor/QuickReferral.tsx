@@ -1,7 +1,7 @@
-import { useState, useEffect } from 'react';
-import { User, Patient, Referral } from '@/types';
-import { getPatientByNationalId, addPatient, addReferral, getPatients } from '@/lib/api';
-import { Search, CheckCircle, UserPlus, Loader2 } from 'lucide-react';
+import { useState } from 'react';
+import { User, Patient } from '@/types';
+import { getPatientByNationalId, addPatient, addReferral } from '@/lib/api';
+import { Search, CheckCircle, UserPlus, Loader2, AlertCircle } from 'lucide-react';
 
 interface QuickReferralProps {
   currentUser: User;
@@ -11,8 +11,6 @@ export default function QuickReferral({ currentUser }: QuickReferralProps) {
   const [nationalId, setNationalId] = useState('');
   const [found, setFound] = useState<Patient | null>(null);
   const [notFound, setNotFound] = useState(false);
-  const [newName, setNewName] = useState('');
-  const [newPhone, setNewPhone] = useState('');
   const [success, setSuccess] = useState(false);
   const [searching, setSearching] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -20,11 +18,16 @@ export default function QuickReferral({ currentUser }: QuickReferralProps) {
   const search = async () => {
     if (!nationalId.trim() || nationalId.length < 10) return;
     setSearching(true);
+    setFound(null);
+    setNotFound(false);
+    setSuccess(false);
     const p = await getPatientByNationalId(nationalId.trim());
     setSearching(false);
-    if (p) { setFound(p); setNotFound(false); }
-    else { setFound(null); setNotFound(true); }
-    setSuccess(false);
+    if (p) {
+      setFound(p);
+    } else {
+      setNotFound(true);
+    }
   };
 
   const registerReferral = async (patient: Patient) => {
@@ -39,39 +42,50 @@ export default function QuickReferral({ currentUser }: QuickReferralProps) {
     });
     setSaving(false);
     setSuccess(true);
-    setNationalId(''); setFound(null); setNotFound(false);
-    setNewName(''); setNewPhone('');
+    setNationalId('');
+    setFound(null);
+    setNotFound(false);
   };
 
   const addAndRegister = async () => {
-    if (!newName.trim()) return;
+    if (!nationalId.trim()) return;
     setSaving(true);
+    // Register patient with national ID only, auto-generate a placeholder name
     const newPatient = await addPatient({
       nationalId: nationalId.trim(),
-      name: newName.trim(),
-      phone: newPhone.trim() || undefined,
+      name: `بیمار ${nationalId.trim()}`,
       createdAt: new Date().toISOString().split('T')[0],
     });
     if (newPatient) await registerReferral(newPatient);
     setSaving(false);
   };
 
+  const reset = () => {
+    setNationalId('');
+    setFound(null);
+    setNotFound(false);
+    setSuccess(false);
+  };
+
   return (
-    <div className="p-4" dir="rtl">
-      <div className="mb-4">
-        <h2 className="text-base font-bold text-slate-800">ثبت ارجاع سریع</h2>
+    <div dir="rtl">
+      <div className="mb-5">
+        <h2 className="text-lg font-bold text-slate-800">ثبت ارجاع سریع</h2>
         <p className="text-xs text-slate-400 mt-0.5">کد ملی بیمار را وارد کنید</p>
       </div>
 
       {success && (
-        <div className="flex items-center gap-2 bg-green-50 border border-green-200 rounded-2xl px-4 py-3 mb-4">
-          <CheckCircle size={16} className="text-green-600 flex-shrink-0" />
-          <p className="text-sm text-green-700 font-medium">ارجاع با موفقیت ثبت شد</p>
+        <div className="flex items-center justify-between bg-green-50 border border-green-200 rounded-2xl px-5 py-4 mb-5">
+          <div className="flex items-center gap-3">
+            <CheckCircle size={18} className="text-green-600 flex-shrink-0" />
+            <p className="text-sm text-green-700 font-semibold">ارجاع با موفقیت ثبت شد</p>
+          </div>
+          <button onClick={reset} className="text-green-600 text-xs underline">ارجاع جدید</button>
         </div>
       )}
 
-      <div className="bg-white rounded-2xl border border-slate-100 p-4">
-        <div className="flex gap-2 mb-4">
+      <div className="bg-white rounded-2xl border border-slate-100 p-5">
+        <div className="flex gap-2 mb-5">
           <input
             type="text"
             value={nationalId}
@@ -85,21 +99,27 @@ export default function QuickReferral({ currentUser }: QuickReferralProps) {
           <button
             onClick={search}
             disabled={nationalId.length < 10 || searching}
-            className="flex items-center gap-1.5 px-4 py-3 rounded-2xl text-sm font-bold transition-all disabled:opacity-40"
+            className="flex items-center gap-2 px-5 py-3 rounded-2xl text-sm font-bold transition-all disabled:opacity-40"
             style={{ background: 'linear-gradient(135deg, #00e8d6, #00b8aa)', color: '#0d1b2a' }}
           >
             {searching ? <Loader2 size={16} className="animate-spin" /> : <Search size={16} />}
+            جستجو
           </button>
         </div>
 
+        {/* Patient found */}
         {found && (
           <div className="bg-cyan-50 border border-cyan-200 rounded-2xl p-4">
-            <p className="text-[11px] text-cyan-600 font-semibold mb-1">بیمار یافت شد</p>
-            <p className="font-bold text-slate-800">{found.name}</p>
-            <p className="text-xs text-slate-500 mt-0.5" dir="ltr">{found.nationalId}</p>
-            {found.phone && <p className="text-xs text-slate-400" dir="ltr">{found.phone}</p>}
+            <p className="text-[11px] text-cyan-600 font-semibold mb-2">بیمار در سیستم یافت شد</p>
+            <div className="flex items-center justify-between mb-3">
+              <div>
+                <p className="font-bold text-slate-800 text-base">{found.name}</p>
+                <p className="text-xs text-slate-500 mt-0.5" dir="ltr">{found.nationalId}</p>
+                {found.phone && <p className="text-xs text-slate-400" dir="ltr">{found.phone}</p>}
+              </div>
+            </div>
             <button onClick={() => registerReferral(found)} disabled={saving}
-              className="mt-3 w-full py-2.5 rounded-xl text-sm font-bold disabled:opacity-50 flex items-center justify-center gap-2"
+              className="w-full py-3 rounded-xl text-sm font-bold disabled:opacity-50 flex items-center justify-center gap-2"
               style={{ background: 'linear-gradient(135deg, #00e8d6, #00b8aa)', color: '#0d1b2a' }}>
               {saving ? <Loader2 size={14} className="animate-spin" /> : null}
               ثبت ارجاع
@@ -107,32 +127,20 @@ export default function QuickReferral({ currentUser }: QuickReferralProps) {
           </div>
         )}
 
+        {/* Patient not found */}
         {notFound && (
           <div className="bg-amber-50 border border-amber-200 rounded-2xl p-4">
             <div className="flex items-center gap-2 mb-3">
-              <UserPlus size={15} className="text-amber-600" />
-              <p className="text-sm font-semibold text-amber-700">بیمار جدید</p>
+              <AlertCircle size={15} className="text-amber-600 flex-shrink-0" />
+              <p className="text-sm font-semibold text-amber-700">بیمار با این کد ملی در سیستم نیست</p>
             </div>
-            <div className="space-y-3">
-              <div>
-                <label className="text-[11px] text-slate-600 mb-1 block">نام و نام خانوادگی *</label>
-                <input value={newName} onChange={e => setNewName(e.target.value)}
-                  className="w-full border-2 border-slate-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:border-cyan-400 transition-colors"
-                  placeholder="نام کامل بیمار" />
-              </div>
-              <div>
-                <label className="text-[11px] text-slate-600 mb-1 block">شماره تماس</label>
-                <input value={newPhone} onChange={e => setNewPhone(e.target.value)}
-                  className="w-full border-2 border-slate-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:border-cyan-400 transition-colors"
-                  placeholder="۰۹۱۲..." dir="ltr" />
-              </div>
-              <button onClick={addAndRegister} disabled={!newName.trim() || saving}
-                className="w-full py-2.5 rounded-xl text-sm font-bold disabled:opacity-40 flex items-center justify-center gap-2"
-                style={{ background: 'linear-gradient(135deg, #00e8d6, #00b8aa)', color: '#0d1b2a' }}>
-                {saving ? <Loader2 size={14} className="animate-spin" /> : null}
-                ثبت بیمار جدید و ارجاع
-              </button>
-            </div>
+            <p className="text-xs text-amber-600/80 mb-4">با ثبت ارجاع، بیمار جدید با این کد ملی ایجاد می‌شود.</p>
+            <button onClick={addAndRegister} disabled={saving}
+              className="w-full py-3 rounded-xl text-sm font-bold disabled:opacity-40 flex items-center justify-center gap-2"
+              style={{ background: 'linear-gradient(135deg, #f59e0b, #d97706)', color: '#fff' }}>
+              {saving ? <Loader2 size={14} className="animate-spin" /> : <UserPlus size={14} />}
+              ثبت بیمار جدید و ارجاع
+            </button>
           </div>
         )}
       </div>
